@@ -1,0 +1,34 @@
+using namespace System.Net
+
+param($Request, $TriggerMetadata)
+
+Write-Host "Drive Gear Temperature Service triggered"
+
+$readings = $Request.Body.Readings
+if ($readings) {
+    foreach ($reading in $readings) {
+        if ($reading.temperature -le 25) {
+            $reading.Status = "OK"
+        }
+        elseif ($reading.temperature -le 50) {
+            $reading.Status = "CAUTION"
+        }
+        else {
+            $reading.Status = "DANGER"
+        }
+
+        Write-Host "Reading is $($reading.Status)"
+    }
+
+    $status = [HttpStatusCode]::OK
+    $body = $readings
+}
+else {
+    $status = [HttpStatusCode]::BadRequest
+    $body = "Please send an array of readings in the request body"
+}
+
+Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
+    StatusCode = $status
+    Body = $body
+})
